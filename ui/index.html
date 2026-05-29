@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TG Business Bot 管理面板</title>
+<meta name="description" content="Telegram Business Bot API 中转管理面板，支持 Bot API 10.0 全功能可视化操作。"/>
+<meta property="og:title" content="TG Business Bot 管理面板"/>
+<meta property="og:description" content="Telegram Business Bot API 中转服务，支持多用户连接、自动回复、Cron 定时消息"/>
+<link rel="preconnect" href="https://cdn.tailwindcss.com"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class'}</script>
+<style>
+*{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#334155 transparent}
+:root{--bg-base:#0f172a;--bg-card:#1e293b;--bg-input:#0f172a;--border:#334155;--text:#e2e8f0;--text-muted:#94a3b8;--text-dim:#475569}
+.light,:root.light{--bg-base:#f8fafc;--bg-card:#ffffff;--bg-input:#f1f5f9;--border:#e2e8f0;--text:#0f172a;--text-muted:#475569;--text-dim:#94a3b8}
+body{background:var(--bg-base);color:var(--text);font-family:system-ui,sans-serif;margin:0;transition:background .3s,color .3s}
+:root{--sb:260px}
+.sidebar{width:var(--sb);height:100vh;background:var(--bg-card);border-right:1px solid var(--border);position:fixed;top:0;left:0;overflow:hidden;display:flex;flex-direction:column;z-index:40}
+.main{margin-left:var(--sb);min-height:100vh}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:.75rem}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem 1rem;border-radius:.5rem;font-size:.875rem;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:#334155;color:#cbd5e1}.btn-secondary:hover{background:#475569}
+.btn-danger{background:#ef4444;color:#fff}.btn-danger:hover{background:#dc2626}
+.btn-ghost{background:transparent;color:#94a3b8;border:1px solid #334155}.btn-ghost:hover{background:#334155;color:#e2e8f0}
+.btn-sm{padding:.3rem .7rem;font-size:.8rem}
+.input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:.5rem;padding:.55rem .85rem;color:var(--text);font-size:.875rem;outline:none;transition:border-color .15s}
+.input:focus{border-color:#3b82f6}.input::placeholder{color:#475569}
+.badge{display:inline-flex;align-items:center;padding:.15rem .5rem;border-radius:9999px;font-size:.72rem;font-weight:600}
+.badge-green{background:#052e16;color:#4ade80;border:1px solid #166534}
+.badge-red{background:#450a0a;color:#f87171;border:1px solid #991b1b}
+.badge-blue{background:#0c1a2e;color:#60a5fa;border:1px solid #1d4ed8}
+.badge-yellow{background:#1c1002;color:#fbbf24;border:1px solid #854d0e}
+.badge-gray{background:#1e293b;color:#94a3b8;border:1px solid #334155}
+.nav-item{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;border-radius:.5rem;cursor:pointer;font-size:.875rem;color:#94a3b8;transition:all .15s;margin:.1rem .5rem}
+.nav-item:hover{background:#334155;color:#e2e8f0}
+.nav-item.active{background:#1d4ed8;color:#fff}
+.nav-item.disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+.chat-bubble-in{background:#1e293b;border:1px solid #334155;border-radius:1rem 1rem 1rem .3rem;align-self:flex-start;max-width:72%}
+.chat-bubble-out{background:#1d4ed8;border-radius:1rem 1rem .3rem 1rem;align-self:flex-end;max-width:72%}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:#1e293b;border:1px solid #334155;border-radius:1rem;width:100%;max-width:640px;max-height:90vh;overflow-y:auto}
+.tab{padding:.45rem 1rem;font-size:.875rem;cursor:pointer;border-radius:.4rem;color:#94a3b8;transition:.15s}
+.tab.active{background:#1d4ed8;color:#fff}
+.code-block{background:#0f172a;border:1px solid #334155;border-radius:.5rem;padding:1rem;font-family:monospace;font-size:.8rem;color:#94a3b8;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.right-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:.4rem;font-size:.72rem;font-weight:500;border:1px solid}
+.right-on{background:#052e16;color:#4ade80;border-color:#166534}
+.right-off{background:#1e293b;color:#475569;border-color:#334155}
+.spinner{width:1.2rem;height:1.2rem;border:2px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tag{display:inline-block;padding:.1rem .45rem;background:#1e3a8a;color:#93c5fd;border-radius:.3rem;font-size:.72rem;margin:.1rem}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;padding:.8rem 1.2rem;border-radius:.6rem;font-size:.875rem;animation:slideIn .3s ease;max-width:320px}
+@keyframes slideIn{from{transform:translateY(1rem);opacity:0}to{transform:translateY(0);opacity:1}}
+#login-screen{position:fixed;inset:0;background:#0f172a;z-index:200;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="login-screen" style="display:none">
+  <div class="card p-8 w-full max-w-sm mx-4">
+    <div class="text-center mb-6">
+      <div class="text-4xl mb-3">🤖</div>
+      <h1 class="text-xl font-bold text-white">Business Bot 管理面板</h1>
+      <p class="text-slate-400 text-sm mt-1">Telegram Bot API 10.0 · Business Bot</p>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-slate-400 mb-1 block">访问密码</label>
+        <input id="login-pwd" type="password" class="input" placeholder="ACCESS_PASSWORD" autofocus/>
+      </div>
+      <button id="login-btn" class="btn btn-primary w-full justify-center mt-2">进 入</button>
+      <p id="login-err" class="text-red-400 text-sm text-center hidden"></p>
+    </div>
+    <p class="text-xs text-slate-600 text-center mt-4">密码通过 Cookie 保存，关闭浏览器后需重新登录</p>
+  </div>
+</div>
+
+<!-- 主应用 -->
+<div id="app" style="display:none">
+  <aside class="sidebar flex flex-col">
+    <div class="p-4 border-b border-slate-700">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-lg">🤖</span>
+        <span id="bot-name" class="font-semibold text-white text-sm truncate">加载中…</span>
+      </div>
+      <p id="bot-username" class="text-xs text-slate-400 truncate"></p>
+    </div>
+    <div class="p-3 border-b border-slate-700">
+      <p class="text-xs text-slate-500 mb-1.5 font-medium uppercase tracking-wide">当前连接</p>
+      <select id="conn-select" class="input text-xs">
+        <option value="">── 选择 Business 用户 ──</option>
+      </select>
+      <div id="rights-chips" class="flex flex-wrap gap-1 mt-2 hidden"></div>
+    </div>
+    <nav class="flex-1 p-2 space-y-0.5 overflow-y-auto">
+      <p class="text-xs text-slate-600 px-2 pt-2 pb-1 font-medium uppercase tracking-wide">全局</p>
+      <div class="nav-item" data-page="home">🏠 所有连接</div>
+      <div class="nav-item" data-page="schedule">⏰ 定时消息</div>
+      <div class="nav-item" data-page="docs">📖 API 文档</div>
+      <div class="nav-item" data-page="logs">📊 操作日志</div>
+      <div class="nav-item" data-page="settings">⚙️ 系统设置</div>
+      <p class="text-xs text-slate-600 px-2 pt-3 pb-1 font-medium uppercase tracking-wide">当前用户</p>
+      <div class="nav-item disabled" data-page="overview"  id="nav-overview">📋 概览</div>
+      <div class="nav-item disabled" data-page="chats"     id="nav-chats">💬 聊天历史</div>
+      <div class="nav-item disabled" data-page="send"      id="nav-send">✉️ 发消息</div>
+      <div class="nav-item disabled" data-page="rules"     id="nav-rules">🤖 自动回复</div>
+      <div class="nav-item disabled" data-page="profile"   id="nav-profile">👤 资料管理</div>
+      <div class="nav-item disabled" data-page="gifts"     id="nav-gifts">🎁 礼物与星星</div>
+      <div class="nav-item disabled" data-page="stories"   id="nav-stories">📸 动态管理</div>
+    </nav>
+    <div class="p-3 border-t border-slate-700">
+      <button id="logout-btn" class="btn btn-ghost w-full justify-center btn-sm">退 出</button>
+    </div>
+  </aside>
+  <main class="main" style="background:var(--bg-base)">
+    <div class="sticky top-0 z-30 border-b px-6 py-3 flex items-center justify-between" style="background:var(--bg-base);border-color:var(--border)">
+      <div id="page-title" class="font-semibold text-white text-base">所有连接</div>
+      <div class="flex items-center gap-2">
+        <span id="conn-badge" class="badge badge-gray hidden"></span>
+        <button id="refresh-btn" class="btn btn-ghost btn-sm">↻ 刷新</button>
+      </div>
+    </div>
+    <div id="page-content" class="p-6 max-w-5xl mx-auto"></div>
+  </main>
+</div>
+
+<!-- Modal -->
+<div id="modal" class="modal-bg hidden">
+  <div class="modal p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="modal-title" class="font-semibold text-white text-lg"></h2>
+      <button id="modal-close" class="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// 状态（无需存储密码，Cookie 由浏览器自动管理）
+// ══════════════════════════════════════════════════════════════════
+const S = {
+  conn: null,
+  connList: [],
+  page: 'home',
+  chatId: null,
+  dbError: null,
+};
+
+// ══════════════════════════════════════════════════════════════════
+// API 工具（全部用 credentials:'include' 自动携带 Cookie）
+// ══════════════════════════════════════════════════════════════════
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(path, {
+      ...opts,
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    if (r.status === 401) {
+      // Cookie 过期，回到登录页
+      showLogin();
+      return { ok: false, error: 'Session expired' };
+    }
+    return await r.json();
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+const GET  = path => api(path);
+const POST = (path, body) => api(path, { method: 'POST', body: JSON.stringify(body) });
+const PUT  = (path, body) => api(path, { method: 'PUT',  body: JSON.stringify(body) });
+const DEL  = path => api(path, { method: 'DELETE' });
+
+// ══════════════════════════════════════════════════════════════════
+// 登录 / 登出
+// ══════════════════════════════════════════════════════════════════
+function showLogin() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pwd').value = '';
+  document.getElementById('login-err').classList.add('hidden');
+}
+
+function showApp(botInfo) {
+  if (botInfo?.first_name) {
+    document.getElementById('bot-name').textContent = botInfo.first_name;
+    document.getElementById('bot-username').textContent = botInfo.username ? '@' + botInfo.username : '';
+  }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+document.getElementById('login-btn').onclick = async () => {
+  const pwd = document.getElementById('login-pwd').value.trim();
+  const errEl = document.getElementById('login-err');
+  errEl.classList.add('hidden');
+  if (!pwd) { errEl.textContent = '请输入密码'; errEl.classList.remove('hidden'); return; }
+
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = '<span class="spinner"></span> 验证中…';
+  btn.disabled = true;
+
+  try {
+    const loginRes = await fetch('/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd }),
+    });
+
+    if (!loginRes.ok) {
+      btn.textContent = '进 入';
+      btn.disabled = false;
+      errEl.textContent = '密码错误，请重试';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    // 登录成功：reload 让 window.load 用新 Cookie 重新检测并进入应用
+    // 避免任何 DOM 状态冲突
+    window.location.reload();
+  } catch (e) {
+    btn.textContent = '进 入';
+    btn.disabled = false;
+    errEl.textContent = '请求失败：' + e.message;
+    errEl.classList.remove('hidden');
+  }
+};
+
+document.getElementById('login-pwd').onkeydown = e => {
+  if (e.key === 'Enter') document.getElementById('login-btn').click();
+};
+
+document.getElementById('logout-btn').onclick = async () => {
+  await fetch('/logout', { method: 'POST', credentials: 'include' });
+  showLogin();
+};
+
+// ══════════════════════════════════════════════════════════════════
+// 启动：检查 Cookie 是否有效，有则直接进入应用
+// ══════════════════════════════════════════════════════════════════
+window.addEventListener('load', async () => {
+  const r = await fetch('/api/setup', { credentials: 'include' });
+  if (r.ok) {
+    const data = await r.json();
+    if (data.ok) {
+      showApp(data.result?.bot);
+      navigate('home');           // 立即显示页面，不等 DB
+      loadConnections();          // 后台异步加载连接列表（不阻塞进入）
+      return;
+    }
+  }
+  showLogin();
+});
+
+// ══════════════════════════════════════════════════════════════════
+// Toast
+// ══════════════════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const colors = { info: 'bg-slate-700 text-white', ok: 'bg-green-800 text-green-200', err: 'bg-red-900 text-red-200' };
+  const el = document.createElement('div');
+  el.className = `toast ${colors[type] || colors.info}`;
+  el.textContent = msg;
+  document.getElementById('toast-wrap').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// Modal
+// ══════════════════════════════════════════════════════════════════
+function openModal(title, bodyHtml) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+document.getElementById('modal-close').onclick = closeModal;
+document.getElementById('modal').onclick = e => { if (e.target === document.getElementById('modal')) closeModal(); };
+
+// ══════════════════════════════════════════════════════════════════
+// 连接管理
+// ══════════════════════════════════════════════════════════════════
+async function loadConnections() {
+  const res = await GET('/api/connections');
+  if (!res.ok) {
+    S.connList = [];
+    S.dbError = res.error || '加载失败';
+    return;
+  }
+  S.dbError = null;
+  S.connList = res.result || [];
+  const sel = document.getElementById('conn-select');
+  sel.innerHTML = '<option value="">── 选择 Business 用户 ──</option>';
+  S.connList.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `${c.user_name || c.user_id}${c.user_username ? ' (@' + c.user_username + ')' : ''}`;
+    if (!c.is_enabled) opt.textContent += ' [已断开]';
+    sel.appendChild(opt);
+  });
+}
+
+document.getElementById('conn-select').onchange = async e => {
+  const id = e.target.value;
+  if (!id) {
+    S.conn = null;
+    document.getElementById('rights-chips').classList.add('hidden');
+    updateNavByRights(null);
+    document.getElementById('conn-badge').classList.add('hidden');
+    return;
+  }
+  const res = await GET('/api/connections/' + id);
+  if (!res.ok) return;
+  S.conn = res.result;
+  const rights = JSON.parse(S.conn.rights || '{}');
+  renderRightsChips(rights);
+  updateNavByRights(rights);
+  const badge = document.getElementById('conn-badge');
+  badge.textContent = S.conn.user_name || S.conn.user_id;
+  badge.className = 'badge ' + (S.conn.is_enabled ? 'badge-green' : 'badge-red');
+  badge.classList.remove('hidden');
+  navigate('overview');
+};
+
+function renderRightsChips(rights) {
+  const wrap = document.getElementById('rights-chips');
+  wrap.innerHTML = '';
+  // 严格对齐官方 BusinessBotRights 字段名
+  const MAP = {
+    can_reply:'回复消息', can_read_messages:'标记已读',
+    can_delete_sent_messages:'删已发', can_delete_all_messages:'删所有消息',
+    can_edit_name:'改名', can_edit_bio:'改简介', can_edit_profile_photo:'改头像', can_edit_username:'改用户名',
+    can_view_gifts_and_stars:'看礼物', can_convert_gifts_to_stars:'换星星',
+    can_change_gift_settings:'礼物设置', can_transfer_and_upgrade_gifts:'转让礼物',
+    can_transfer_stars:'转星星', can_manage_stories:'动态',
+  };
+  Object.entries(MAP).forEach(([k,label]) => {
+    const el = document.createElement('span');
+    el.className = 'right-chip ' + (rights[k] ? 'right-on' : 'right-off');
+    el.textContent = (rights[k] ? '✓ ' : '✗ ') + label;
+    wrap.appendChild(el);
+  });
+  wrap.classList.remove('hidden');
+}
+
+function updateNavByRights(rights) {
+  const r = rights || {};
+  const has = (...keys) => keys.some(k => r[k]);
+  const map = {
+    'nav-overview': true,
+    'nav-chats':   has('can_read_messages','can_reply'),
+    'nav-send':    has('can_reply'),
+    'nav-rules':   has('can_reply'),
+    'nav-profile': has('can_edit_name','can_edit_bio','can_edit_profile_photo','can_edit_username'),
+    'nav-gifts':   has('can_view_gifts_and_stars','can_convert_gifts_to_stars','can_transfer_stars'),
+    'nav-stories': has('can_manage_stories'),
+  };
+  Object.entries(map).forEach(([id, enabled]) => {
+    const el = document.getElementById(id);
+    if (!rights) el.classList.add('disabled');
+    else if (enabled) el.classList.remove('disabled');
+    else el.classList.add('disabled');
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 路由
+// ══════════════════════════════════════════════════════════════════
+const PAGE_TITLES = {
+  home:'所有连接', overview:'连接概览', chats:'聊天历史', send:'发送消息',
+  rules:'自动回复规则', profile:'资料管理', gifts:'礼物与星星',
+  stories:'动态管理', schedule:'定时消息', docs:'API 文档',
+  logs:'操作日志', settings:'系统设置',
+};
+
+function navigate(page) {
+  S.page = page;
+  S.chatId = null;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+  render();
+}
+
+document.querySelectorAll('.nav-item').forEach(el => el.onclick = () => navigate(el.dataset.page));
+document.getElementById('refresh-btn').onclick = async () => {
+  const btn = document.getElementById('refresh-btn');
+  btn.innerHTML = '<span class="spinner" style="width:.9rem;height:.9rem;border-width:2px"></span>';
+  btn.disabled = true;
+  await render();
+  btn.innerHTML = '↻ 刷新';
+  btn.disabled = false;
+};
+
+async function render() {
+  const pc = document.getElementById('page-content');
+  pc.innerHTML = '<div class="flex justify-center pt-12"><span class="spinner" style="width:2rem;height:2rem;border-width:3px"></span></div>';
+  try {
+    const fns = {
+      home:renderHome, overview:renderOverview, chats:renderChats,
+      send:renderSend, rules:renderRules, profile:renderProfile,
+      gifts:renderGifts, stories:renderStories, schedule:renderSchedule,
+      docs:renderDocs, logs:renderLogs, settings:renderSettings,
+    };
+    const fn = fns[S.page];
+    if (fn) await fn();
+    else pc.innerHTML = '<p class="text-slate-400">页面不存在</p>';
+  } catch (e) {
+    console.error('[render]', S.page, e);
+    pc.innerHTML = `<div class="card p-6 text-center">
+      <p class="text-red-400 text-sm mb-2">页面加载失败：${esc(String(e))}</p>
+      <button class="btn btn-secondary btn-sm" onclick="render()">↻ 重试</button>
+    </div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 工具函数
+// ══════════════════════════════════════════════════════════════════
+// ── 主题管理 ──────────────────────────────────────────────────────
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') {
+    root.classList.add('dark'); root.classList.remove('light');
+  } else if (theme === 'light') {
+    root.classList.remove('dark'); root.classList.add('light');
+  } else {
+    // system
+    root.classList.remove('dark','light');
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.classList.add('dark');
+  }
+}
+function setTheme(theme) {
+  localStorage.setItem('tgp_theme', theme);
+  applyTheme(theme);
+  updateThemeBtns(theme);
+  const labels = {dark:'当前：深色模式',light:'当前：浅色模式',system:'当前：跟随系统'};
+  const el = document.getElementById('theme-current');
+  if (el) el.textContent = labels[theme] || '';
+}
+function updateThemeBtns(theme) {
+  ['dark','light','system'].forEach(t => {
+    const btn = document.getElementById('theme-'+t);
+    if (!btn) return;
+    btn.className = 'btn flex-1 justify-center ' + (t === theme ? 'btn-primary' : 'btn-secondary');
+  });
+}
+// 跟随系统变化
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (localStorage.getItem('tgp_theme') === 'system') applyTheme('system');
+});
+// 页面加载时应用已保存主题
+(function() {
+  const saved = localStorage.getItem('tgp_theme') || 'dark';
+  applyTheme(saved);
+})();
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtTime(ts, showTime=false) {
+  if (!ts) return '—';
+  const d = new Date(ts*1000);
+  const diff = Math.floor((Date.now()-ts*1000)/1000);
+  if (!showTime && diff<3600) return Math.floor(diff/60)+'分钟前';
+  if (!showTime && diff<86400) return Math.floor(diff/3600)+'小时前';
+  return showTime ? d.toLocaleString('zh-CN') : d.toLocaleDateString('zh-CN');
+}
+function err(msg) { return `<div class="card p-6 text-red-400 text-sm">❌ 错误：${esc(msg)}</div>`; }
+function copyText(text, label='内容') {
+  navigator.clipboard.writeText(text).then(()=>toast(label+'已复制','ok')).catch(()=>toast('复制失败','err'));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：所有连接
+// ══════════════════════════════════════════════════════════════════
+async function renderHome() {
+  // 不依赖 DB：主页直接用已有数据或展示初始化引导
+  const pc = document.getElementById('page-content');
+
+  // 若 DB 还未初始化，显示引导卡片（不阻止进入后台）
+  if (S.dbError && S.dbError.includes('no such table')) {
+    pc.innerHTML = `<div class="grid gap-4 md:grid-cols-2 max-w-2xl">
+      <div class="card p-8 text-center md:col-span-2">
+        <div class="text-5xl mb-4">🔧</div>
+        <p class="text-white font-semibold text-lg mb-2">首次部署：需要初始化</p>
+        <p class="text-slate-400 text-sm mb-6">已成功登录！接下来请在系统设置中完成两步初始化：<br>① 创建数据库表 &nbsp;② 注册 Telegram Webhook</p>
+        <button class="btn btn-primary" onclick="navigate('settings')">前往系统设置 →</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  if (!S.connList.length) {
+    // 若连接列表为空（可能还没加载完），尝试刷新一次
+    await loadConnections();
+  }
+
+  if (S.dbError) {
+    pc.innerHTML = `<div class="card p-6 text-red-400 text-sm">❌ 数据库错误：${esc(S.dbError)}</div>`;
+    return;
+  }
+
+  if (!S.connList.length) {
+    pc.innerHTML = `<div class="card p-10 text-center"><div class="text-5xl mb-4">📡</div><p class="text-slate-300 font-medium">暂无 Business 连接</p><p class="text-slate-500 text-sm mt-2">用户在 Telegram「聊天自动化」中将 Bot 设为自动化管理后，连接会自动出现在此处。</p></div>`;
+    return;
+  }
+  pc.innerHTML = `<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="conn-cards"></div>`;
+  const grid = document.getElementById('conn-cards');
+  S.connList.forEach(c => {
+    const rights = JSON.parse(c.rights||'{}');
+    const rc = Object.values(rights).filter(Boolean).length;
+    const card = document.createElement('div');
+    card.className = 'card p-4 cursor-pointer hover:border-blue-500 transition-colors';
+    card.innerHTML = `
+      <div class="flex items-start justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-lg font-bold text-blue-400">${(c.user_name||'U')[0].toUpperCase()}</div>
+          <div>
+            <p class="font-semibold text-white text-sm">${esc(c.user_name||c.user_id)}</p>
+            <p class="text-xs text-slate-400">${c.user_username?'@'+esc(c.user_username):'ID: '+c.user_id}</p>
+          </div>
+        </div>
+        <span class="badge ${c.is_enabled?'badge-green':'badge-red'}">${c.is_enabled?'活跃':'断开'}</span>
+      </div>
+      <div class="text-xs text-slate-500 space-y-1">
+        <div>权限：<span class="text-slate-300">${rc} 项</span></div>
+        <div>连接时间：<span class="text-slate-300">${fmtTime(c.connected_at)}</span></div>
+      </div>
+      <button class="btn btn-primary btn-sm mt-3" onclick="selectConn('${c.id}')">管理</button>`;
+    grid.appendChild(card);
+  });
+}
+
+async function selectConn(id) {
+  document.getElementById('conn-select').value = id;
+  await document.getElementById('conn-select').onchange({ target: { value: id } });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：连接概览
+// ══════════════════════════════════════════════════════════════════
+async function renderOverview() {
+  if (!S.conn) { navigate('home'); return; }
+  const pc = document.getElementById('page-content');
+  const c = S.conn;
+  const rights = JSON.parse(c.rights||'{}');
+  const RIGHTS_MAP = [
+    {key:'can_reply',label:'回复消息（24h内有来信的聊天）',group:'消息管理'},
+    {key:'can_read_messages',label:'标记私信为已读',group:'消息管理'},
+    {key:'can_delete_sent_messages',label:'删除Bot已发消息',group:'消息管理'},
+    {key:'can_delete_all_messages',label:'删除所有私信',group:'消息管理'},
+    {key:'can_edit_name',label:'编辑名称',group:'资料管理'},
+    {key:'can_edit_bio',label:'编辑简介',group:'资料管理'},
+    {key:'can_edit_profile_photo',label:'编辑头像',group:'资料管理'},
+    {key:'can_edit_username',label:'编辑用户名',group:'资料管理'},
+    {key:'can_view_gifts_and_stars',label:'查看礼物/星星',group:'礼物'},
+    {key:'can_convert_gifts_to_stars',label:'礼物换星星',group:'礼物'},
+    {key:'can_change_gift_settings',label:'礼物设置',group:'礼物'},
+    {key:'can_transfer_and_upgrade_gifts',label:'转让/升级礼物',group:'礼物'},
+    {key:'can_transfer_stars',label:'转让星星',group:'礼物'},
+    {key:'can_manage_stories',label:'管理动态',group:'动态'},
+  ];
+  const grouped = {};
+  RIGHTS_MAP.forEach(r => { if (!grouped[r.group]) grouped[r.group]=[]; grouped[r.group].push(r); });
+  const rightsHtml = Object.entries(grouped).map(([g,items])=>`
+    <div class="mb-3"><p class="text-xs text-slate-500 font-medium uppercase mb-1.5">${g}</p>
+    <div class="flex flex-wrap gap-1.5">${items.map(r=>`<span class="${rights[r.key]?'right-chip right-on':'right-chip right-off'}">${rights[r.key]?'✓':'✗'} ${r.label}</span>`).join('')}</div></div>`).join('');
+  pc.innerHTML = `<div class="grid gap-4 lg:grid-cols-3">
+    <div class="card p-5 lg:col-span-1">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-14 h-14 rounded-full bg-blue-900 flex items-center justify-center text-2xl font-bold text-blue-300">${(c.user_name||'U')[0].toUpperCase()}</div>
+        <div><h2 class="font-bold text-white">${esc(c.user_name||c.user_id)}</h2>${c.user_username?`<p class="text-blue-400 text-sm">@${esc(c.user_username)}</p>`:''}</div>
+      </div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">状态</span><span class="badge ${c.is_enabled?'badge-green':'badge-red'}">${c.is_enabled?'活跃':'断开'}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">连接时间</span><span class="text-slate-300 text-xs">${fmtTime(c.connected_at)}</span></div>
+        <div class="pt-1"><span class="text-slate-400 block mb-1">Connection ID</span>
+          <div class="flex items-center gap-2"><code class="text-xs text-slate-300 bg-slate-900 px-2 py-1 rounded flex-1 truncate">${esc(c.id)}</code>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(c.id)}','Connection ID')">复制</button></div></div>
+      </div>
+      <button class="btn btn-danger btn-sm mt-4" onclick="deleteConn('${c.id}')">删除记录</button>
+    </div>
+    <div class="card p-5 lg:col-span-2"><h3 class="font-semibold text-white mb-4">权限详情</h3>${rightsHtml}</div>
+  </div>`;
+}
+
+async function deleteConn(id) {
+  if (!confirm('确认删除此连接的本地记录？')) return;
+  const r = await DEL('/api/connections/'+id);
+  if (r.ok) { toast('已删除','ok'); await loadConnections(); navigate('home'); }
+  else toast('删除失败: '+r.error,'err');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：聊天历史
+// ══════════════════════════════════════════════════════════════════
+async function renderChats() {
+  if (!S.conn) return;
+  if (S.chatId) { await renderMessages(); return; }
+  const pc = document.getElementById('page-content');
+  const res = await GET('/api/connections/'+S.conn.id+'/chats');
+  if (!res.ok) { pc.innerHTML=err(res.error); return; }
+  const chats = res.result||[];
+  if (!chats.length) { pc.innerHTML=`<div class="card p-8 text-center"><p class="text-slate-400">暂无聊天记录</p></div>`; return; }
+  pc.innerHTML = `<div class="space-y-2">${chats.map(ch=>`
+    <div class="card p-4 hover:border-blue-500 transition-colors cursor-pointer flex items-center justify-between" onclick="openChat(${ch.chat_id})">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold">${(ch.chat_title||ch.chat_id+'')[0].toUpperCase()}</div>
+        <div><p class="font-medium text-white text-sm">${esc(ch.chat_title||'Chat '+ch.chat_id)}</p>
+          <p class="text-xs text-slate-500 truncate max-w-xs">${esc(ch.last_text||'—')}</p></div>
+      </div>
+      <div class="text-right text-xs text-slate-400 ml-4 shrink-0">
+        <p>${fmtTime(ch.last_message_at)}</p>
+        <p class="mt-0.5"><span class="text-blue-400">${ch.incoming_count}↓</span> <span class="text-green-400">${ch.outgoing_count}↑</span></p>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function openChat(chatId) { S.chatId=chatId; render(); }
+
+async function renderMessages() {
+  if (!S.conn||!S.chatId) return;
+  const pc = document.getElementById('page-content');
+  const res = await GET(`/api/connections/${S.conn.id}/chats/${S.chatId}/messages?limit=80`);
+  if (!res.ok) { pc.innerHTML=err(res.error); return; }
+  const msgs = res.result||[];
+  pc.innerHTML = `
+    <div class="flex items-center gap-3 mb-4">
+      <button class="btn btn-ghost btn-sm" onclick="S.chatId=null;render()">← 返回</button>
+      <span class="text-white font-medium">Chat ${S.chatId}</span>
+      <button class="btn btn-danger btn-sm ml-auto" onclick="clearChat(${S.chatId})">清空记录</button>
+    </div>
+    <div class="card p-4 flex flex-col gap-2 min-h-64 max-h-[65vh] overflow-y-auto" id="msg-list">
+      ${msgs.length?msgs.map(m=>msgBubble(m)).join(''):'<p class="text-slate-500 text-center py-8">暂无消息</p>'}
+    </div>
+    <div class="mt-4 flex gap-2">
+      <input id="quick-text" class="input" placeholder="快速回复…"/>
+      <button class="btn btn-primary" onclick="quickReply(${S.chatId})">发送</button>
+    </div>`;
+  const ml=document.getElementById('msg-list'); if(ml) ml.scrollTop=ml.scrollHeight;
+}
+function msgBubble(m) {
+  const isOut = m.direction === 'outgoing';
+  // 防御性处理：旧表可能缺列，content_type 为 undefined
+  const ct = m.content_type ?? 'text';
+  const ICONS = {photo:'📷',video:'🎥',document:'📄',audio:'🎵',voice:'🎙',sticker:'🎭',animation:'🎞'};
+  const icon = ICONS[ct] ?? '';
+  // text 优先，无 text 时用 content_type 提示，都没有则显示"空消息"
+  const body = m.text || (ct !== 'text' ? `[${ct}]` : '[空消息]');
+  const sender = m.from_name || (isOut ? 'Bot' : '用户');
+  const ts = m.sent_at || 0;
+  return `<div class="flex ${isOut?'flex-row-reverse':'flex-row'} items-end gap-2">
+    <div class="${isOut?'chat-bubble-out':'chat-bubble-in'} px-3.5 py-2.5 text-sm" style="word-break:break-word">
+      <p class="text-xs ${isOut?'text-blue-300':'text-blue-400'} mb-0.5 font-medium">${esc(sender)}</p>
+      <p style="color:#f1f5f9">${icon}${icon?' ':''}${esc(body)}</p>
+      <p class="text-xs mt-1 ${isOut?'text-blue-200':'text-slate-500'} text-right">${ts?fmtTime(ts,true):'—'}</p>
+    </div></div>`;
+}
+async function quickReply(chatId) {
+  const text=document.getElementById('quick-text')?.value?.trim();
+  if (!text||!S.conn) return;
+  const res=await POST('/api/sendMessage',{business_connection_id:S.conn.id,chat_id:chatId,text,parse_mode:'HTML'});
+  if (res.ok) { toast('已发送','ok'); document.getElementById('quick-text').value=''; render(); }
+  else toast('失败: '+(res.description||res.error),'err');
+}
+async function clearChat(chatId) {
+  if (!confirm('确认清空聊天记录？')) return;
+  const res=await api(`/api/connections/${S.conn.id}/chats/${chatId}/messages`,{method:'DELETE',body:'{}'});
+  if (res.ok) { toast('已清空','ok'); S.chatId=null; render(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：发送消息
+// ══════════════════════════════════════════════════════════════════
+async function renderSend() {
+  if (!S.conn) return;
+  const chatsRes=await GET('/api/connections/'+S.conn.id+'/chats');
+  const chats=chatsRes.ok?chatsRes.result:[];
+  const pc=document.getElementById('page-content');
+  pc.innerHTML=`<div class="grid gap-4 lg:grid-cols-2">
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4">发送消息</h3>
+      <div class="space-y-3">
+        <div><label class="text-xs text-slate-400 mb-1 block">目标聊天</label>
+          <select id="send-chat" class="input"><option value="">从历史选择…</option>
+          ${chats.map(c=>`<option value="${c.chat_id}">${esc(c.chat_title||'Chat '+c.chat_id)}</option>`).join('')}
+          </select></div>
+        <div><label class="text-xs text-slate-400 mb-1 block">Chat ID（手动输入）</label>
+          <input id="send-chat-id" class="input" placeholder="数字 Chat ID" type="number"/></div>
+        <div><label class="text-xs text-slate-400 mb-1 block">消息内容（支持 HTML）</label>
+          <textarea id="send-text" class="input h-28 resize-none" placeholder="支持 &lt;b&gt; &lt;i&gt; &lt;code&gt; 等 HTML 格式"></textarea></div>
+        <div class="flex gap-3">
+          <div class="flex-1"><label class="text-xs text-slate-400 mb-1 block">解析模式</label>
+            <select id="send-parse" class="input"><option>HTML</option><option>Markdown</option><option value="">纯文本</option></select></div>
+        </div>
+        <button class="btn btn-primary w-full justify-center" onclick="doSend()">📤 发送</button>
+      </div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4">其他操作</h3>
+      <div class="space-y-3">
+        <div class="border border-slate-700 rounded-lg p-3">
+          <p class="text-sm font-medium text-slate-300 mb-2">编辑消息</p>
+          <input id="edit-msg-id" class="input mb-2" placeholder="message_id" type="number"/>
+          <input id="edit-chat-id" class="input mb-2" placeholder="chat_id" type="number"/>
+          <textarea id="edit-text" class="input h-20 resize-none mb-2" placeholder="新内容"></textarea>
+          <button class="btn btn-secondary w-full btn-sm justify-center" onclick="doEdit()">编辑</button>
+        </div>
+        <div class="border border-slate-700 rounded-lg p-3">
+          <p class="text-sm font-medium text-slate-300 mb-2">删除消息</p>
+          <input id="del-msg-id" class="input mb-2" placeholder="message_id" type="number"/>
+          <input id="del-chat-id" class="input mb-2" placeholder="chat_id" type="number"/>
+          <button class="btn btn-danger w-full btn-sm justify-center" onclick="doDel()">删除</button>
+        </div>
+        <div class="border border-slate-700 rounded-lg p-3">
+          <p class="text-sm font-medium text-slate-300 mb-2">标记已读</p>
+          <input id="read-chat-id" class="input mb-2" placeholder="chat_id" type="number"/>
+          <input id="read-msg-id" class="input mb-2" placeholder="message_id" type="number"/>
+          <button class="btn btn-secondary w-full btn-sm justify-center" onclick="doRead()">标记已读</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('send-chat').onchange=e=>{if(e.target.value) document.getElementById('send-chat-id').value=e.target.value;};
+}
+async function doSend() {
+  const cid=document.getElementById('send-chat-id').value||document.getElementById('send-chat').value;
+  const text=document.getElementById('send-text').value.trim();
+  const pm=document.getElementById('send-parse').value;
+  if(!cid||!text){toast('请填写聊天ID和内容','err');return;}
+  const res=await POST('/api/sendMessage',{business_connection_id:S.conn.id,chat_id:parseInt(cid),text,parse_mode:pm});
+  if(res.ok){toast('已发送','ok');document.getElementById('send-text').value='';}
+  else toast('失败: '+(res.description||res.error),'err');
+}
+async function doEdit() {
+  const msgId=document.getElementById('edit-msg-id').value;
+  const chatId=document.getElementById('edit-chat-id').value;
+  const text=document.getElementById('edit-text').value.trim();
+  if(!msgId||!chatId||!text){toast('请填写完整','err');return;}
+  const res=await POST('/api/editMessageText',{business_connection_id:S.conn.id,chat_id:parseInt(chatId),message_id:parseInt(msgId),text,parse_mode:'HTML'});
+  if(res.ok)toast('已编辑','ok');else toast('失败: '+res.description,'err');
+}
+async function doDel() {
+  const msgId=document.getElementById('del-msg-id').value;
+  const chatId=document.getElementById('del-chat-id').value;
+  if(!msgId||!chatId){toast('请填写完整','err');return;}
+  const res=await POST('/api/deleteMessage',{business_connection_id:S.conn.id,chat_id:parseInt(chatId),message_id:parseInt(msgId)});
+  if(res.ok)toast('已删除','ok');else toast('失败: '+res.description,'err');
+}
+async function doRead() {
+  const chatId=document.getElementById('read-chat-id').value;
+  const msgId=document.getElementById('read-msg-id').value;
+  if(!chatId||!msgId){toast('请填写完整','err');return;}
+  const res=await POST('/api/readBusinessMessage',{business_connection_id:S.conn.id,chat_id:parseInt(chatId),message_id:parseInt(msgId)});
+  if(res.ok)toast('已标记已读','ok');else toast('失败: '+res.description,'err');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：自动回复规则
+// ══════════════════════════════════════════════════════════════════
+async function renderRules() {
+  if (!S.conn) return;
+  const pc=document.getElementById('page-content');
+  const res=await GET('/api/rules?connection_id='+S.conn.id);
+  const rules=res.ok?res.result:[];
+  pc.innerHTML=`<div class="flex items-center justify-between mb-4">
+    <p class="text-slate-400 text-sm">共 ${rules.length} 条规则</p>
+    <button class="btn btn-primary btn-sm" onclick="openAddRule()">+ 新增规则</button>
+  </div>
+  <div class="space-y-3">${rules.length?rules.map(r=>ruleCard(r)).join(''):'<div class="card p-6 text-center text-slate-400">暂无规则</div>'}</div>`;
+}
+function ruleCard(r) {
+  const types={keyword:'🔑 关键词',regex:'🔤 正则',all:'📣 全部'};
+  return `<div class="card p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="badge badge-blue">${types[r.trigger_type]||r.trigger_type}</span>
+          <span class="badge ${r.enabled?'badge-green':'badge-gray'}">${r.enabled?'启用':'停用'}</span>
+          <span class="text-xs text-slate-500">优先级 ${r.priority}</span>
+        </div>
+        ${r.trigger_value?`<p class="text-sm text-slate-300 font-mono bg-slate-900 px-2 py-1 rounded mb-2 truncate">触发：${esc(r.trigger_value)}</p>`:'<p class="text-xs text-slate-500 mb-2">触发：[匹配所有]</p>'}
+        <p class="text-sm text-slate-200 bg-blue-950 px-2 py-1 rounded truncate">回复：${esc(r.reply_text)}</p>
+      </div>
+      <div class="flex gap-1.5 shrink-0">
+        <button class="btn btn-ghost btn-sm" onclick="toggleRule(${r.id},${r.enabled})">${r.enabled?'停用':'启用'}</button>
+        <button class="btn btn-secondary btn-sm" onclick="openEditRule(${r.id})">编辑</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRule(${r.id})">删除</button>
+      </div>
+    </div></div>`;
+}
+function ruleForm(r={}) {
+  const presets=[{l:'@hourly 每小时',v:'@hourly'},{l:'每天9点',v:'0 9 * * *'},{l:'工作日9点',v:'0 9 * * 1-5'}];
+  return `<div class="space-y-3">
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-400 mb-1 block">触发类型</label>
+        <select id="rf-type" class="input" onchange="toggleRuleTrigger()">
+          <option value="keyword" ${r.trigger_type==='keyword'?'selected':''}>关键词</option>
+          <option value="regex"   ${r.trigger_type==='regex'?'selected':''}>正则</option>
+          <option value="all"     ${r.trigger_type==='all'?'selected':''}>全部消息</option>
+        </select></div>
+      <div><label class="text-xs text-slate-400 mb-1 block">优先级</label>
+        <input id="rf-priority" class="input" type="number" value="${r.priority||0}"/></div>
+    </div>
+    <div id="rf-trigger-wrap">
+      <label class="text-xs text-slate-400 mb-1 block">触发词/正则</label>
+      <input id="rf-trigger" class="input" value="${esc(r.trigger_value||'')}" placeholder="关键词或正则表达式"/>
+    </div>
+    <div><label class="text-xs text-slate-400 mb-1 block">回复内容（支持 HTML）</label>
+      <textarea id="rf-reply" class="input h-24 resize-none">${esc(r.reply_text||'')}</textarea></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-400 mb-1 block">解析模式</label>
+        <select id="rf-parse" class="input"><option ${(r.reply_parse_mode||'HTML')==='HTML'?'selected':''}>HTML</option><option ${r.reply_parse_mode==='Markdown'?'selected':''}>Markdown</option></select></div>
+      <div><label class="text-xs text-slate-400 mb-1 block">范围</label>
+        <select id="rf-scope" class="input"><option value="${S.conn?.id||''}" ${r.connection_id?'selected':''}>仅此连接</option><option value="" ${!r.connection_id?'selected':''}>全局</option></select></div>
+    </div>
+    <div class="flex items-center gap-2"><input id="rf-enabled" type="checkbox" ${r.enabled!==0?'checked':''}/><label for="rf-enabled" class="text-sm text-slate-300">立即启用</label></div>
+    <button class="btn btn-primary w-full justify-center" onclick="saveRule(${r.id||0})">保存规则</button>
+  </div>`;
+}
+function toggleRuleTrigger() { document.getElementById('rf-trigger-wrap').style.display=document.getElementById('rf-type').value==='all'?'none':''; }
+function openAddRule() { openModal('新增自动回复规则',ruleForm()); setTimeout(toggleRuleTrigger,50); }
+async function openEditRule(id) {
+  const res=await GET('/api/rules');
+  const rule=res.result?.find(r=>r.id===id);
+  if(!rule)return;
+  openModal('编辑规则 #'+id,ruleForm(rule));
+  setTimeout(toggleRuleTrigger,50);
+}
+async function saveRule(id) {
+  const body={
+    connection_id:document.getElementById('rf-scope').value||null,
+    trigger_type:document.getElementById('rf-type').value,
+    trigger_value:document.getElementById('rf-trigger').value||null,
+    reply_text:document.getElementById('rf-reply').value.trim(),
+    reply_parse_mode:document.getElementById('rf-parse').value,
+    priority:parseInt(document.getElementById('rf-priority').value)||0,
+    enabled:document.getElementById('rf-enabled').checked,
+  };
+  if(!body.reply_text){toast('回复内容不能为空','err');return;}
+  const res=id?await PUT('/api/rules/'+id,body):await POST('/api/rules',body);
+  if(res.ok){toast(id?'已更新':'已创建','ok');closeModal();render();}
+  else toast('失败: '+(res.error||res.description),'err');
+}
+async function toggleRule(id,enabled) {
+  const res=await PUT('/api/rules/'+id,{enabled:!enabled});
+  if(res.ok){toast(enabled?'已停用':'已启用','ok');render();}
+}
+async function deleteRule(id) {
+  if(!confirm('确认删除？'))return;
+  const res=await DEL('/api/rules/'+id);
+  if(res.ok){toast('已删除','ok');render();}
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：资料管理
+// ══════════════════════════════════════════════════════════════════
+async function renderProfile() {
+  if (!S.conn) return;
+  const rights=JSON.parse(S.conn.rights||'{}');
+  const pc=document.getElementById('page-content');
+  const fields=[
+    {key:'can_edit_name',label:'修改名称',method:'setBusinessAccountName',inputs:[{id:'pf-fname',label:'名',field:'first_name',required:true},{id:'pf-lname',label:'姓（可选）',field:'last_name'}]},
+    {key:'can_edit_bio',label:'修改简介',method:'setBusinessAccountBio',inputs:[{id:'pf-bio',label:'简介（70字内）',field:'bio',textarea:true}]},
+    {key:'can_edit_username',label:'修改用户名',method:'setBusinessAccountUsername',inputs:[{id:'pf-uname',label:'新用户名（不含@）',field:'username',required:true}]},
+    {key:'can_edit_profile_photo',label:'设置头像',method:'setBusinessAccountProfilePhoto',inputs:[{id:'pf-photo',label:'头像 File ID',field:'photo',required:true}]},
+  ];
+  pc.innerHTML=`<div class="grid gap-4 md:grid-cols-2">${fields.map(f=>`
+    <div class="card p-5 ${!rights[f.key]?'opacity-50':''}">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-white text-sm">${f.label}</h3>
+        <span class="badge ${rights[f.key]?'badge-green':'badge-red'}">${rights[f.key]?'已授权':'无权限'}</span>
+      </div>
+      <div class="space-y-2">${f.inputs.map(inp=>inp.textarea
+        ?`<textarea id="${inp.id}" class="input h-20 resize-none" placeholder="${inp.label}" ${!rights[f.key]?'disabled':''}></textarea>`
+        :`<input id="${inp.id}" class="input" placeholder="${inp.label}" ${!rights[f.key]?'disabled':''}/>`)
+        .join('')}</div>
+      <button class="btn btn-primary btn-sm mt-3 ${!rights[f.key]?'opacity-50':''}"
+        onclick="${rights[f.key]?`doProfileAction('${f.method}','${f.inputs.map(i=>i.id+'|'+i.field).join(',')}')`:''}">执行</button>
+    </div>`).join('')}</div>`;
+}
+async function doProfileAction(method,inputsStr) {
+  if(!S.conn)return;
+  const body={business_connection_id:S.conn.id};
+  inputsStr.split(',').forEach(pair=>{const[id,field]=pair.split('|');const el=document.getElementById(id);if(el&&el.value.trim())body[field]=el.value.trim();});
+  const res=await POST('/api/'+method,body);
+  if(res.ok)toast('操作成功','ok');else toast('失败: '+(res.description||res.error),'err');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：礼物与星星
+// ══════════════════════════════════════════════════════════════════
+async function renderGifts() {
+  if (!S.conn) return;
+  const rights=JSON.parse(S.conn.rights||'{}');
+  const pc=document.getElementById('page-content');
+  pc.innerHTML=`<div class="space-y-4"><div class="grid gap-4 md:grid-cols-2" id="gifts-data"></div>
+  <div class="grid gap-4 md:grid-cols-2">
+    ${rights.can_convert_gifts_to_stars?`<div class="card p-5"><h3 class="font-semibold text-white mb-3">🔄 礼物换星星</h3><input id="gift-owned-id" class="input mb-2" placeholder="owned_gift_id"/><button class="btn btn-primary btn-sm w-full justify-center" onclick="doGift('convertGiftToStars')">确认兑换</button></div>`:''}
+    ${rights.can_transfer_stars?`<div class="card p-5"><h3 class="font-semibold text-white mb-3">⭐ 转让星星</h3><input id="star-count" class="input mb-2" placeholder="数量" type="number"/><button class="btn btn-primary btn-sm w-full justify-center" onclick="doGift('transferBusinessAccountStars')">确认转让</button></div>`:''}
+  </div></div>`;
+  if(rights.can_view_gifts_and_stars) {
+    const[gr,br]=await Promise.all([POST('/api/getBusinessAccountGifts',{business_connection_id:S.conn.id}),POST('/api/getBusinessAccountStarBalance',{business_connection_id:S.conn.id})]);
+    document.getElementById('gifts-data').innerHTML=`
+      <div class="card p-5"><h3 class="font-semibold text-white mb-3">⭐ 星星余额</h3>
+        ${br.ok?`<p class="text-3xl font-bold text-yellow-400">${br.result?.star_count??'—'}</p>`:`<p class="text-red-400 text-sm">${br.description||'加载失败'}</p>`}</div>
+      <div class="card p-5"><h3 class="font-semibold text-white mb-3">🎁 礼物列表</h3>
+        ${gr.ok?(gr.result?.gifts?.length?`<div class="space-y-2 max-h-48 overflow-y-auto">${gr.result.gifts.map(g=>`<div class="bg-slate-900 rounded p-2 text-sm text-slate-300">${esc(g.gift?.emoji||'🎁')} <code class="text-xs text-slate-400">${esc(g.owned_gift_id||'')}</code></div>`).join('')}</div>`:'<p class="text-slate-400 text-sm">暂无礼物</p>'):`<p class="text-red-400 text-sm">${gr.description||'加载失败'}</p>`}
+      </div>`;
+  }
+}
+async function doGift(method) {
+  if(!S.conn)return;
+  const body={business_connection_id:S.conn.id};
+  if(method==='convertGiftToStars')body.owned_gift_id=document.getElementById('gift-owned-id')?.value;
+  if(method==='transferBusinessAccountStars')body.star_count=parseInt(document.getElementById('star-count')?.value);
+  const res=await POST('/api/'+method,body);
+  if(res.ok){toast('操作成功','ok');render();}else toast('失败: '+(res.description||res.error),'err');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：动态管理
+// ══════════════════════════════════════════════════════════════════
+async function renderStories() {
+  if (!S.conn) return;
+  const pc=document.getElementById('page-content');
+  pc.innerHTML=`<div class="grid gap-4 md:grid-cols-2">
+    <div class="card p-5"><h3 class="font-semibold text-white mb-3">🗑️ 删除动态</h3>
+      <input id="story-del-id" class="input mb-2" placeholder="story_id" type="number"/>
+      <button class="btn btn-danger btn-sm w-full justify-center" onclick="doStory('deleteStory')">删除</button></div>
+    <div class="card p-5"><h3 class="font-semibold text-white mb-3">📬 获取私信</h3>
+      <input id="pcm-user" class="input mb-2" placeholder="user_id" type="number"/>
+      <button class="btn btn-secondary btn-sm w-full justify-center" onclick="doGetPersonalMsgs()">获取</button>
+      <div id="pcm-result" class="mt-3 text-sm text-slate-400"></div></div>
+  </div>`;
+}
+async function doStory(method) {
+  if(!S.conn)return;
+  const body={business_connection_id:S.conn.id};
+  if(method==='deleteStory')body.story_id=parseInt(document.getElementById('story-del-id').value);
+  const res=await POST('/api/'+method,body);
+  if(res.ok)toast('操作成功','ok');else toast('失败: '+(res.description||res.error),'err');
+}
+async function doGetPersonalMsgs() {
+  const userId=document.getElementById('pcm-user').value;
+  if(!userId){toast('请输入 user_id','err');return;}
+  const res=await POST('/api/getUserPersonalChatMessages',{user_id:parseInt(userId),offset:0,limit:50});
+  document.getElementById('pcm-result').innerHTML=res.ok?`<pre class="code-block text-xs">${esc(JSON.stringify(res.result,null,2))}</pre>`:`<p class="text-red-400">${res.description||res.error}</p>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：定时消息（Cron 规则）
+// ══════════════════════════════════════════════════════════════════
+const CRON_PRESETS=[
+  {l:'每分钟',v:'* * * * *'},{l:'每小时',v:'0 * * * *'},{l:'每天09:00',v:'0 9 * * *'},
+  {l:'工作日09:00',v:'0 9 * * 1-5'},{l:'每周一09:00',v:'0 9 * * 1'},
+  {l:'每月1日09:00',v:'0 9 1 * *'},{l:'每30分钟',v:'*/30 * * * *'},{l:'每5分钟',v:'*/5 * * * *'},
+];
+
+async function renderSchedule() {
+  const pc=document.getElementById('page-content');
+  const res=await GET('/api/schedule?limit=200');
+  const rules=res.ok?res.result:[];
+  const cid=S.conn?.id||'';
+  pc.innerHTML=`<div class="flex items-center justify-between mb-4">
+    <div><h2 class="font-semibold text-white">Cron 定时规则</h2><p class="text-xs text-slate-400 mt-0.5">标准 5 段 Cron 表达式，DO Alarm 精确调度</p></div>
+    <button class="btn btn-primary" onclick="openAddCron()">+ 新增规则</button>
+  </div>
+  <div class="space-y-3">${rules.length?rules.map(r=>cronCard(r)).join(''):'<div class="card p-8 text-center"><p class="text-slate-400">暂无定时规则</p></div>'}</div>`;
+}
+
+function cronCard(r) {
+  const enabled=r.enabled===1;
+  return `<div class="card p-4 ${!enabled?'opacity-60':''}">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span class="font-medium text-white text-sm">${esc(r.name)}</span>
+          <span class="badge ${enabled?'badge-green':'badge-gray'}">${enabled?'运行中':'已停用'}</span>
+          <code class="badge badge-blue font-mono text-xs">${esc(r.cron_expr)}</code>
+        </div>
+        <p class="text-sm text-slate-300 bg-slate-900 px-2 py-1 rounded truncate mb-2">${esc(r.text)}</p>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+          <span>Chat: ${r.chat_id}</span>
+          <span>下次: <span class="text-slate-300">${r.next_run?fmtTime(r.next_run,true):'—'}</span></span>
+          <span>上次: <span class="text-slate-300">${r.last_run?fmtTime(r.last_run,true):'从未'}</span></span>
+          <span>已执行: <span class="text-slate-300">${r.run_count}次</span></span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5 shrink-0">
+        <button class="btn btn-secondary btn-sm" onclick="triggerCron(${r.id})">▶ 立即触发</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleCron(${r.id},${r.enabled})">${enabled?'停用':'启用'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEditCron(${r.id})">编辑</button>
+        <button class="btn btn-ghost btn-sm" onclick="viewCronLogs(${r.id})">日志</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCron(${r.id})">删除</button>
+      </div>
+    </div></div>`;
+}
+
+function cronForm(r={}) {
+  return `<div class="space-y-3">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="col-span-2"><label class="text-xs text-slate-400 mb-1 block">规则名称 *</label><input id="cr-name" class="input" value="${esc(r.name||'')}" placeholder="如：每日早安"/></div>
+      <div><label class="text-xs text-slate-400 mb-1 block">Connection ID *</label><input id="cr-conn" class="input" value="${esc(r.connection_id||S.conn?.id||'')}" placeholder="Connection ID"/></div>
+      <div><label class="text-xs text-slate-400 mb-1 block">Chat ID *</label><input id="cr-chat" class="input" type="number" value="${r.chat_id||''}"/></div>
+    </div>
+    <div><label class="text-xs text-slate-400 mb-1 block">Cron 表达式 * <span class="text-slate-600">（分 时 日 月 周）</span></label>
+      <input id="cr-expr" class="input font-mono" value="${esc(r.cron_expr||'0 9 * * *')}" placeholder="0 9 * * *" oninput="previewCron()"/>
+      <div id="cr-preview" class="text-xs mt-1 h-4"></div>
+      <div class="flex flex-wrap gap-1 mt-2">${CRON_PRESETS.map(p=>`<button type="button" class="tag cursor-pointer hover:bg-blue-800" onclick="document.getElementById('cr-expr').value='${p.v}';previewCron()">${p.l}</button>`).join('')}</div>
+    </div>
+    <div><label class="text-xs text-slate-400 mb-1 block">消息内容 *（支持 HTML）</label><textarea id="cr-text" class="input h-20 resize-none">${esc(r.text||'')}</textarea></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="text-xs text-slate-400 mb-1 block">解析模式</label>
+        <select id="cr-parse" class="input"><option ${(r.parse_mode||'HTML')==='HTML'?'selected':''}>HTML</option><option ${r.parse_mode==='Markdown'?'selected':''}>Markdown</option></select></div>
+      <div><label class="text-xs text-slate-400 mb-1 block">时区</label>
+        <select id="cr-tz" class="input">
+          <option value="Asia/Shanghai" ${(r.timezone||'Asia/Shanghai')==='Asia/Shanghai'?'selected':''}>Asia/Shanghai</option>
+          <option value="UTC" ${r.timezone==='UTC'?'selected':''}>UTC</option>
+          <option value="Asia/Tokyo" ${r.timezone==='Asia/Tokyo'?'selected':''}>Asia/Tokyo</option>
+        </select></div>
+    </div>
+    <div class="flex items-center gap-2"><input id="cr-enabled" type="checkbox" ${r.enabled!==0?'checked':''}/><label for="cr-enabled" class="text-sm text-slate-300">立即启用</label></div>
+    <button class="btn btn-primary w-full justify-center" onclick="saveCron(${r.id||0})">保存规则</button>
+  </div>`;
+}
+
+function previewCron() {
+  const el=document.getElementById('cr-preview'); if(!el)return;
+  const expr=document.getElementById('cr-expr')?.value?.trim();
+  if(!expr){el.textContent='';return;}
+  const aliases=['@hourly','@daily','@midnight','@weekly','@monthly','@yearly'];
+  if(aliases.includes(expr.toLowerCase())){el.textContent='✓ 别名格式';el.className='text-xs text-green-400 mt-1';return;}
+  const parts=expr.split(/\s+/);
+  if(parts.length===5){el.textContent=`✓ 分[${parts[0]}] 时[${parts[1]}] 日[${parts[2]}] 月[${parts[3]}] 周[${parts[4]}]`;el.className='text-xs text-green-400 mt-1';}
+  else{el.textContent='✗ 需要5段（分 时 日 月 周）';el.className='text-xs text-red-400 mt-1';}
+}
+
+function openAddCron() { openModal('新增 Cron 定时规则',cronForm()); setTimeout(previewCron,50); }
+async function openEditCron(id) {
+  const res=await GET('/api/schedule/'+id);
+  if(!res.ok){toast('加载失败','err');return;}
+  openModal('编辑规则 #'+id,cronForm(res.result));
+  setTimeout(previewCron,50);
+}
+async function saveCron(id) {
+  const body={name:document.getElementById('cr-name')?.value?.trim(),connection_id:document.getElementById('cr-conn')?.value?.trim(),chat_id:parseInt(document.getElementById('cr-chat')?.value),text:document.getElementById('cr-text')?.value?.trim(),parse_mode:document.getElementById('cr-parse')?.value||'HTML',cron_expr:document.getElementById('cr-expr')?.value?.trim(),timezone:document.getElementById('cr-tz')?.value,enabled:document.getElementById('cr-enabled')?.checked};
+  if(!body.name||!body.connection_id||!body.chat_id||!body.text||!body.cron_expr){toast('请填写全部必填字段','err');return;}
+  const res=id?await PUT('/api/schedule/'+id,body):await POST('/api/schedule',body);
+  if(res.ok){toast(id?'已更新':'已创建','ok');closeModal();render();}
+  else toast('失败: '+(res.error||res.description),'err');
+}
+async function toggleCron(id,enabled) { const res=await PUT('/api/schedule/'+id,{enabled:!enabled}); if(res.ok){toast(enabled?'已停用':'已启用','ok');render();} }
+async function triggerCron(id) { const res=await POST('/api/schedule/'+id+'/trigger',{}); if(res.ok)toast('已触发，消息已入队','ok');else toast('失败','err'); }
+async function deleteCron(id) { if(!confirm('确认删除？'))return; const res=await DEL('/api/schedule/'+id); if(res.ok){toast('已删除','ok');render();} }
+async function viewCronLogs(id) {
+  const res=await GET('/api/schedule/'+id+'/logs?limit=30');
+  if(!res.ok){toast('加载失败','err');return;}
+  const logs=res.result||[];
+  openModal('执行日志',logs.length?`<div class="space-y-2 max-h-96 overflow-y-auto">${logs.map(l=>`<div class="bg-slate-900 rounded p-2.5 flex items-center justify-between"><div><span class="badge ${l.result==='ok'?'badge-green':'badge-red'} mr-2">${l.result}</span><span class="text-xs text-slate-400">${fmtTime(l.fired_at,true)}</span>${l.tg_message_id?`<span class="text-xs text-slate-500 ml-2">MsgID:${l.tg_message_id}</span>`:''}</div></div>`).join('')}</div>`:'<p class="text-slate-400 text-center py-4">暂无记录</p>');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：API 文档
+// ══════════════════════════════════════════════════════════════════
+const API_DOCS=[
+  {cat:'系统',icon:'⚙️',list:[
+    {method:'GET',path:'/api/setup',name:'获取系统状态',desc:'返回 Bot 信息、DB 状态、Webhook 状态。',params:[],curl:`curl -b "tgp_session=TOKEN" {BASE}/api/setup`},
+    {method:'POST',path:'/api/setup/db',name:'初始化数据库',desc:'创建所有 D1 数据库表。',params:[],curl:`curl -X POST -b "tgp_session=TOKEN" {BASE}/api/setup/db`},
+    {method:'POST',path:'/api/setup/webhook',name:'注册 Webhook',desc:'将 Webhook URL 注册到 Telegram。',params:[],curl:`curl -X POST -b "tgp_session=TOKEN" {BASE}/api/setup/webhook`},
+  ]},
+  {cat:'连接管理',icon:'📡',list:[
+    {method:'GET',path:'/api/connections',name:'列举所有连接',desc:'返回所有 Business 连接用户。',params:[],curl:`curl -b "tgp_session=TOKEN" {BASE}/api/connections\n# 或用密码 Header（适合 curl/SDK）：\ncurl -H "X-Access-Password: YOUR_PWD" {BASE}/api/connections`},
+    {method:'GET',path:'/api/connections/{id}/chats',name:'获取聊天列表',params:[{n:'limit',t:'number',r:false,d:'默认50'}],curl:`curl -H "X-Access-Password: YOUR_PWD" {BASE}/api/connections/{id}/chats`},
+    {method:'GET',path:'/api/connections/{id}/chats/{chatId}/messages',name:'获取聊天历史',params:[{n:'limit',t:'number',r:false,d:'默认50'},{n:'search',t:'string',r:false,d:'搜索关键词'}],curl:`curl -H "X-Access-Password: YOUR_PWD" {BASE}/api/connections/{id}/chats/{chatId}/messages`},
+  ]},
+  {cat:'消息操作',icon:'💬',list:[
+    {method:'POST',path:'/api/sendMessage',name:'发送消息',params:[{n:'business_connection_id',t:'string',r:true,d:'Connection ID'},{n:'chat_id',t:'number',r:true,d:'目标聊天'},{n:'text',t:'string',r:true,d:'内容'},{n:'parse_mode',t:'string',r:false,d:'HTML|Markdown'}],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" -H "Content-Type: application/json" \\\n  -d '{"business_connection_id":"{CONN_ID}","chat_id":123,"text":"Hello <b>World</b>!","parse_mode":"HTML"}' \\\n  {BASE}/api/sendMessage`},
+    {method:'POST',path:'/api/deleteBusinessMessages',name:'批量删除消息',params:[{n:'business_connection_id',t:'string',r:true,d:'Connection ID'},{n:'chat_id',t:'number',r:true,d:'聊天 ID'},{n:'message_ids',t:'number[]',r:true,d:'消息 ID 数组'}],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" -H "Content-Type: application/json" \\\n  -d '{"business_connection_id":"{CONN_ID}","chat_id":123,"message_ids":[1,2,3]}' \\\n  {BASE}/api/deleteBusinessMessages`},
+    {method:'POST',path:'/api/answerGuestQuery',name:'答复 Guest Query（API 10.0）',params:[{n:'guest_query_id',t:'string',r:true,d:'来自 guest_message'},{n:'text',t:'string',r:true,d:'回复内容'}],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" -H "Content-Type: application/json" \\\n  -d '{"guest_query_id":"xxx","text":"感谢！"}' \\\n  {BASE}/api/answerGuestQuery`},
+  ]},
+  {cat:'定时消息',icon:'⏰',list:[
+    {method:'GET',path:'/api/schedule',name:'获取 Cron 规则列表',params:[{n:'connection_id',t:'string',r:false,d:'过滤连接'},{n:'enabled',t:'0|1',r:false,d:'过滤状态'}],curl:`curl -H "X-Access-Password: YOUR_PWD" {BASE}/api/schedule`},
+    {method:'POST',path:'/api/schedule',name:'创建 Cron 规则',params:[{n:'name',t:'string',r:true,d:'规则名称'},{n:'connection_id',t:'string',r:true,d:'Connection ID'},{n:'chat_id',t:'number',r:true,d:'目标聊天'},{n:'text',t:'string',r:true,d:'消息内容'},{n:'cron_expr',t:'string',r:true,d:'如 "0 9 * * *"'},{n:'timezone',t:'string',r:false,d:'默认 Asia/Shanghai'}],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" -H "Content-Type: application/json" \\\n  -d '{"name":"每日早安","connection_id":"{CONN_ID}","chat_id":123,"text":"🌅 早安！","cron_expr":"0 9 * * *"}' \\\n  {BASE}/api/schedule`},
+    {method:'POST',path:'/api/schedule/{id}/trigger',name:'手动立即触发',params:[],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" {BASE}/api/schedule/{id}/trigger`},
+  ]},
+  {cat:'自动回复',icon:'🤖',list:[
+    {method:'GET',path:'/api/rules',name:'获取规则列表',params:[{n:'connection_id',t:'string',r:false,d:'过滤连接'}],curl:`curl -H "X-Access-Password: YOUR_PWD" {BASE}/api/rules`},
+    {method:'POST',path:'/api/rules',name:'创建规则',params:[{n:'trigger_type',t:'string',r:true,d:'keyword|regex|all'},{n:'trigger_value',t:'string',r:false,d:'关键词或正则'},{n:'reply_text',t:'string',r:true,d:'回复内容'},{n:'priority',t:'number',r:false,d:'优先级，默认0'},{n:'connection_id',t:'string',r:false,d:'留空为全局规则'}],curl:`curl -X POST -H "X-Access-Password: YOUR_PWD" -H "Content-Type: application/json" \\\n  -d '{"trigger_type":"keyword","trigger_value":"价格","reply_text":"请查看官网","priority":10}' \\\n  {BASE}/api/rules`},
+  ]},
+  {cat:'透明代理',icon:'🔀',list:[
+    {method:'ANY',path:'/bot{TOKEN}/{method}',name:'SDK 直连透明代理',desc:'完整转发至 Telegram 官方 API，现有 SDK 仅修改 base_url 即可迁移。认证通过 X-Access-Password Header。',params:[],curl:`# python-telegram-bot\nbot = Bot(token=TOKEN, base_url="https://your-worker.dev/bot")\n\n# grammY\nconst bot = new Bot(TOKEN, { client: { apiRoot: "https://your-worker.dev" } });\n\n# curl\ncurl -H "X-Access-Password: YOUR_PWD" -X POST -H "Content-Type: application/json" \\\n  -d '{"chat_id":123,"text":"Hello"}' \\\n  {BASE}/bot{TOKEN}/sendMessage`},
+  ]},
+  {cat:'操作日志',icon:'📊',list:[
+    {method:'GET',path:'/api/logs',name:'获取操作日志',params:[{n:'connection_id',t:'string',r:false,d:'过滤连接'},{n:'action',t:'string',r:false,d:'操作类型'},{n:'result',t:'string',r:false,d:'ok|error'},{n:'limit',t:'number',r:false,d:'默认100'}],curl:`curl -H "X-Access-Password: YOUR_PWD" "{BASE}/api/logs?result=error&limit=20"`},
+  ]},
+];
+
+async function renderDocs() {
+  const pc=document.getElementById('page-content');
+  const BASE=window.location.origin;
+  pc.innerHTML=`<div class="flex flex-wrap gap-2 mb-6" id="doc-tabs">
+    <button class="tab active" onclick="filterDocs(null,this)">全部</button>
+    ${API_DOCS.map(c=>`<button class="tab" onclick="filterDocs('${c.cat}',this)">${c.icon} ${c.cat}</button>`).join('')}
+  </div><div id="doc-list" class="space-y-3"></div>`;
+  renderDocList(null,BASE);
+}
+function filterDocs(cat,btn) {
+  document.querySelectorAll('#doc-tabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderDocList(cat,window.location.origin);
+}
+function renderDocList(filterCat,BASE) {
+  const list=document.getElementById('doc-list');
+  let html='';
+  API_DOCS.forEach(section=>{
+    if(filterCat&&section.cat!==filterCat)return;
+    section.list.forEach(ep=>{
+      const curlFinal=(ep.curl||'').replace(/\{BASE\}/g,BASE);
+      const colors={GET:'badge-blue',POST:'badge-green',PUT:'badge-yellow',DELETE:'badge-red',ANY:'badge-gray'};
+      html+=`<div class="card p-4">
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <div><span class="badge ${colors[ep.method]||'badge-gray'} mr-2">${ep.method}</span><code class="text-sm text-blue-300 font-mono">${esc(ep.path)}</code><span class="text-xs text-slate-500 ml-2">${section.icon} ${section.cat}</span></div>
+        </div>
+        <p class="font-medium text-white text-sm mb-1">${ep.name}</p>
+        ${ep.desc?`<p class="text-sm text-slate-400 mb-3">${ep.desc}</p>`:''}
+        ${ep.params&&ep.params.length?`<table class="w-full text-xs mb-3 border border-slate-700 rounded"><thead><tr class="bg-slate-900"><th class="p-2 text-left text-slate-400">参数</th><th class="p-2 text-left text-slate-400">类型</th><th class="p-2 text-left text-slate-400">必填</th><th class="p-2 text-left text-slate-400">说明</th></tr></thead><tbody>${ep.params.map(p=>`<tr class="border-t border-slate-700"><td class="p-2 font-mono text-blue-300">${p.n}</td><td class="p-2 text-slate-400">${p.t}</td><td class="p-2">${p.r?'<span class="text-red-400">必填</span>':'<span class="text-slate-500">可选</span>'}</td><td class="p-2 text-slate-300">${p.d}</td></tr>`).join('')}</tbody></table>`:''}
+        <div class="relative"><pre class="code-block text-xs">${esc(curlFinal)}</pre>
+        <button class="btn btn-ghost btn-sm absolute top-2 right-2" onclick="copyText(\`${curlFinal.replace(/`/g,'\\`')}\`,'curl 命令')">复制</button></div>
+      </div>`;
+    });
+  });
+  list.innerHTML=html||'<p class="text-slate-400">无匹配内容</p>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：操作日志
+// ══════════════════════════════════════════════════════════════════
+async function renderLogs() {
+  const pc=document.getElementById('page-content');
+  const cid=S.conn?.id;
+  const res=await GET('/api/logs'+(cid?'?connection_id='+cid+'&limit=100':'?limit=100'));
+  if(!res.ok){pc.innerHTML=err(res.error);return;}
+  const{logs,stats,total}=res.result;
+  const ac={auto_reply:'badge-blue',sendMessage:'badge-green',cron_sent:'badge-green',cron_failed:'badge-red',business_connection:'badge-yellow'};
+  pc.innerHTML=`<div class="grid gap-4 lg:grid-cols-4 mb-4">
+    <div class="card p-4 text-center"><p class="text-2xl font-bold text-white">${total}</p><p class="text-xs text-slate-400 mt-1">总记录数</p></div>
+    ${(stats||[]).slice(0,6).map(s=>`<div class="card p-3 text-center"><p class="text-lg font-bold ${s.result==='ok'?'text-green-400':'text-red-400'}">${s.count}</p><p class="text-xs text-slate-400 truncate">${esc(s.action)}</p><span class="badge ${s.result==='ok'?'badge-green':'badge-red'} text-xs">${s.result}</span></div>`).join('')}
+  </div>
+  <div class="space-y-2">${(logs||[]).map(log=>`<div class="card p-3 flex items-start gap-3">
+    <span class="badge ${log.result==='ok'?'badge-green':'badge-red'} shrink-0 mt-0.5">${log.result}</span>
+    <div class="flex-1 min-w-0"><div class="flex items-center gap-2 flex-wrap">
+      <span class="badge ${ac[log.action]||'badge-gray'} text-xs">${esc(log.action)}</span>
+      <span class="text-xs text-slate-500 ml-auto">${fmtTime(log.created_at,true)}</span></div>
+      ${log.error_msg?`<p class="text-xs text-red-400 mt-1">${esc(log.error_msg)}</p>`:''}
+      ${log.detail?`<p class="text-xs text-slate-500 mt-0.5 truncate">${esc(log.detail.slice(0,120))}</p>`:''}
+    </div></div>`).join('')||'<div class="card p-6 text-center text-slate-400">暂无日志</div>'}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 页面：系统设置
+// ══════════════════════════════════════════════════════════════════
+async function renderSettings() {
+  const pc=document.getElementById('page-content');
+  pc.innerHTML='<div class="flex justify-center py-8"><span class="spinner" style="width:2rem;height:2rem;border-width:3px"></span></div>';
+  const res=await GET('/api/setup');
+  if(!res.ok&&!res.result){pc.innerHTML=err(res.error||'加载失败');return;}
+  const{bot,webhook,db}=res.result||{};
+  const dbInit=db?.initialized!==false;
+  const whOk=webhook?.ok===true;
+  pc.innerHTML=`<div class="grid gap-4 lg:grid-cols-2">
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4">🤖 Bot 信息</h3>
+      ${bot?`<div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">名称</span><span class="text-white font-medium">${esc(bot.first_name||'')}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">用户名</span><span class="text-blue-400">@${esc(bot.username||'')}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Bot ID</span><span class="font-mono text-slate-300">${bot.id}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">Business 支持</span><span class="${bot.can_connect_to_business?'text-green-400':'text-red-400'}">${bot.can_connect_to_business?'✓ 已开启':'✗ 未开启'}</span></div>
+      </div>`:'<p class="text-red-400 text-sm">无法获取 Bot 信息，请检查 BOT_TOKEN</p>'}
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold mb-4" style="color:var(--text)">🎨 显示主题</h3>
+      <div class="flex gap-2 mb-2">
+        <button id="theme-dark"   onclick="setTheme('dark')"   class="btn btn-secondary flex-1 justify-center">🌙 深色</button>
+        <button id="theme-light"  onclick="setTheme('light')"  class="btn btn-secondary flex-1 justify-center">☀️ 浅色</button>
+        <button id="theme-system" onclick="setTheme('system')" class="btn btn-secondary flex-1 justify-center">💻 跟随系统</button>
+      </div>
+      <p id="theme-current" class="text-xs text-center" style="color:var(--text-muted)"></p>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-white mb-4">🔑 认证方式</h3>
+      <div class="space-y-3 text-sm">
+        <div class="bg-slate-900 rounded p-3">
+          <p class="text-slate-400 text-xs mb-1">浏览器 UI（Cookie，自动）</p>
+          <code class="text-xs text-green-400">✓ 当前已通过 Cookie 认证</code>
+        </div>
+        <div class="bg-slate-900 rounded p-3">
+          <p class="text-slate-400 text-xs mb-1">curl / API 客户端（Header）</p>
+          <code class="text-xs text-slate-300">X-Access-Password: YOUR_PASSWORD</code>
+        </div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-white">🗄️ 数据库</h3>
+        <span class="badge ${dbInit?'badge-green':'badge-red'}">${dbInit?'✓ 已就绪':'✗ 未初始化'}</span>
+      </div>
+      ${dbInit?`<div class="grid grid-cols-2 gap-2 mb-4">
+        ${[['📡 连接',db.connections],['💬 消息',db.messages],['⏰ Cron',db.active_cron_rules],['🤖 回复',db.active_rules]].map(([l,v])=>`
+        <div class="bg-slate-900 rounded p-2.5 text-center"><p class="text-lg font-bold text-white">${v>=0?v:'?'}</p><p class="text-xs text-slate-400">${l}</p></div>`).join('')}
+      </div>`:`<p class="text-sm text-slate-400 mb-4">数据库表尚未创建，点击下方按钮完成初始化。</p>`}
+      <button class="btn btn-primary w-full justify-center" onclick="doInitDB(this)">
+        ${dbInit?'↻ 重新初始化数据库':'🚀 初始化数据库'}
+      </button>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-white">🔗 Webhook</h3>
+        <span class="badge ${whOk?'badge-green':'badge-red'}">${whOk?'✓ 已注册':'✗ 未注册'}</span>
+      </div>
+      <div class="space-y-2 text-sm mb-4">
+        <div><p class="text-slate-400 text-xs mb-0.5">当前注册地址</p>
+          <code class="text-xs ${whOk?'text-green-400':'text-slate-500'} break-all">${esc(webhook?.current||'未设置')}</code></div>
+        <div><p class="text-slate-400 text-xs mb-0.5">应注册到</p>
+          <code class="text-xs text-slate-300 break-all">${esc(webhook?.expected||'')}</code></div>
+        ${webhook?.last_error_message?`<p class="text-xs text-red-400">错误：${esc(webhook.last_error_message)}</p>`:''}
+      </div>
+      <button class="btn btn-primary w-full justify-center" onclick="doInitWebhook(this)">
+        ${whOk?'↻ 重新注册 Webhook':'🚀 注册 Webhook'}
+      </button>
+    </div>
+  </div>`;
+  setTimeout(syncThemeBtns, 50); // 同步主题按钮状态
+}
+
+// renderSettings 打开时同步主题按钮状态（需在 innerHTML 之后执行）
+function syncThemeBtns() {
+  const t = localStorage.getItem('tgp_theme') || 'dark';
+  const labels = {dark:'当前：深色模式',light:'当前：浅色模式',system:'当前：跟随系统'};
+  ['dark','light','system'].forEach(name => {
+    const btn = document.getElementById('theme-'+name);
+    if (btn) btn.className = 'btn flex-1 justify-center ' + (name===t ? 'btn-primary' : 'btn-secondary');
+  });
+  const el = document.getElementById('theme-current');
+  if (el) el.textContent = labels[t] || '';
+}
+
+async function doInitDB(btn) {
+  const orig=btn.textContent; btn.disabled=true; btn.innerHTML='<span class="spinner"></span> 创建中…';
+  const res=await POST('/api/setup/db',{});
+  btn.disabled=false; btn.textContent=orig;
+  if(res.ok){toast('数据库初始化成功','ok');render();}
+  else{const failed=(res.result?.results||[]).filter(t=>!t.ok);toast('失败：'+(failed.map(t=>t.name+': '+t.error).join(', ')||res.error),'err');}
+}
+async function doInitWebhook(btn) {
+  const orig=btn.textContent; btn.disabled=true; btn.innerHTML='<span class="spinner"></span> 注册中…';
+  const res=await POST('/api/setup/webhook',{});
+  btn.disabled=false; btn.textContent=orig;
+  if(res.ok){toast('Webhook 注册成功','ok');render();}
+  else toast('失败：'+(res.result?.error||res.error||'未知'),'err');
+}
+</script>
+</body>
+</html>

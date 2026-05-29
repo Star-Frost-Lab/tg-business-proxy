@@ -1,0 +1,51 @@
+name = "tg-business-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+
+# ── 敏感变量请用 wrangler secret put 设置 ──────────────────────────
+# wrangler secret put BOT_TOKEN
+# wrangler secret put ACCESS_PASSWORD
+# wrangler secret put WEBHOOK_SECRET
+# ──────────────────────────────────────────────────────────────────
+
+[vars]
+# 允许操作的 Business Connection ID 白名单，逗号分隔，留空不限制
+BOT_TOKEN = " "
+ACCESS_PASSWORD = " "
+WEBHOOK_SECRET = ""
+ALLOWED_BUSINESS_CONNECTION_IDS = ""
+
+
+# ── Durable Objects：调度器（替代 Cron，精确到秒、动态任务）────
+[[durable_objects.bindings]]
+name       = "SCHEDULER"
+class_name = "SchedulerDO"
+
+[[migrations]]
+tag         = "v1"
+new_sqlite_classes = ["SchedulerDO"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tg-business-bot"
+database_id = ""   
+# wrangler d1 create tg-business-bot
+
+# ── Queue：定时消息可靠投递（自动重试、死信队列）────────────────────
+# 创建命令：wrangler queues create tg-scheduled-messages
+#           wrangler queues create tg-scheduled-messages-dlq
+[[queues.producers]]
+binding  = "QUEUE"
+queue    = "tg-scheduled-messages"
+
+[[queues.consumers]]
+queue             = "tg-scheduled-messages"
+max_batch_size    = 10       # 每批最多 10 条
+max_batch_timeout = 10       # 最多等 10 秒凑批
+max_retries       = 3        # 失败最多重试 3 次
+dead_letter_queue = "tg-scheduled-messages-dlq"
